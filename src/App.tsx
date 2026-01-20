@@ -112,6 +112,7 @@ function App() {
       setSelectedPage(newPage);
       setPages((prev) => [newPage, ...prev]);
       setHasUnsavedChanges(false);
+      
     });
   };
 
@@ -135,13 +136,23 @@ function App() {
 
   // Удаление страницы
   const handleDeletePage = async (id: string) => {
-    if (confirm('Вы уверены, что хотите удалить эту страницу?')) {
-      await window.electronAPI.deletePage(id);
-      await loadPages();
-      if (selectedPage?.id === id) {
-        setSelectedPage(null);
-      }
+    // Подтверждение уже есть в Editor.tsx, поэтому здесь не дублируем
+    await window.electronAPI.deletePage(id);
+    
+    // Оптимизация: удаляем страницу из локального состояния вместо полной перезагрузки
+    setPages(prevPages => prevPages.filter(p => p.id !== id));
+    
+    if (selectedPage?.id === id) {
+      setSelectedPage(null);
     }
+    
+    // Сбрасываем флаг несохраненных изменений
+    setHasUnsavedChanges(false);
+    
+    // Восстанавливаем фокус окна сразу после удаления
+    setTimeout(async () => {
+      await window.electronAPI.restoreWindowFocus();
+    }, 100);
   };
 
   // Экспорт
@@ -227,21 +238,31 @@ function App() {
             onExportTasksCsv={handleExportTasksCsv}
           />
           
-          <Editor
-            page={selectedPage}
-            onUpdate={handleUpdatePage}
-            onExportMarkdown={handleExportMarkdown}
-            onDelete={handleDeletePage}
-            onSaveAsTemplate={async (page) => {
-              // Сохраняем как шаблон - добавляем специальный тег
-              const templateTags = [...(page.tags || []), '_template'];
-              await handleUpdatePage(page.id, { tags: templateTags });
-              alert('Страница сохранена как шаблон! Вы можете использовать её для создания новых страниц.');
-            }}
-            onUnsavedChanges={setHasUnsavedChanges}
-            onSaveRequest={(fn) => { saveFunctionRef.current = fn; }}
-            allTags={allTags}
-          />
+          {selectedPage ? (
+            <Editor
+              key={selectedPage.id}
+              page={selectedPage}
+              onUpdate={handleUpdatePage}
+              onExportMarkdown={handleExportMarkdown}
+              onDelete={handleDeletePage}
+              onSaveAsTemplate={async (page) => {
+                // Сохраняем как шаблон - добавляем специальный тег
+                const templateTags = [...(page.tags || []), '_template'];
+                await handleUpdatePage(page.id, { tags: templateTags });
+                alert('Страница сохранена как шаблон! Вы можете использовать её для создания новых страниц.');
+              }}
+              onUnsavedChanges={setHasUnsavedChanges}
+              onSaveRequest={(fn) => { saveFunctionRef.current = fn; }}
+              allTags={allTags}
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-800">
+              <div className="text-center text-gray-500 dark:text-gray-400">
+                <p className="text-lg">Выберите страницу для редактирования</p>
+                <p className="text-sm mt-2">или создайте новую (Ctrl+N)</p>
+              </div>
+            </div>
+          )}
           
           <SearchModal
             isOpen={searchOpen}

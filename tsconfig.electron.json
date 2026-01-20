@@ -8,7 +8,9 @@
       "allowImportingTsExtensions": false,
       "esModuleInterop": true,
       "outDir": "dist-electron",
-      "skipLibCheck": true
+      "skipLibCheck": true,
+      "composite": true,
+      "declaration": true
     },
-    "include": ["electron"]
+    "include": ["electron", "src/types"]
   }

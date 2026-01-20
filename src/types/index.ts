@@ -88,6 +88,9 @@ export interface ElectronAPI {
   // Шаблоны
   createFromTemplate: (type: PageType, templateId?: string) => Promise<Page>;
   getTemplates: (type?: PageType) => Promise<Page[]>;
+  
+  // Утилиты окна
+  restoreWindowFocus: () => Promise<void>;
 }
 
 declare global {

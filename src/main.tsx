@@ -1,4 +1,3 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
@@ -42,8 +41,9 @@ if (!window.electronAPI) {
   }
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
+    // StrictMode отключен временно - вызывает проблемы с фокусом input
+    // <React.StrictMode>
       <App />
-    </React.StrictMode>
+    // </React.StrictMode>
   );
 }

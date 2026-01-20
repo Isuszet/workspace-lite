@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Page } from '../types';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type { Page, TaskStatus, TaskPriority } from '../types';
 import MarkdownEditor from './MarkdownEditor';
 
 interface EditorProps {
@@ -14,12 +14,45 @@ interface EditorProps {
 }
 
 export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onSaveAsTemplate, onUnsavedChanges, onSaveRequest, allTags }: EditorProps) {
+  console.log('🏗️ Editor MOUNTED for page:', page?.id, page?.title);
+  
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [localTags, setLocalTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [savedState, setSavedState] = useState<string>('');
   const [hasUnsavedChangesState, setHasUnsavedChangesState] = useState(false);
+  
+  // Ref для автофокуса на поле заголовка
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  // Отслеживаем ID последней страницы для автофокуса только при смене страницы
+  const lastPageIdRef = useRef<string | null>(null);
+  
+  useEffect(() => {
+    console.log('🎬 Editor component mounted/updated');
+    
+    // Устанавливаем фокус при монтировании с большей задержкой
+    // чтобы все React рендеры успели завершиться
+    const timeoutId = setTimeout(() => {
+      if (titleInputRef.current) {
+        console.log('🎯 Setting focus programmatically');
+        // Сначала blur, потом focus - чтобы гарантировать что onFocus сработает
+        titleInputRef.current.blur();
+        setTimeout(() => {
+          if (titleInputRef.current) {
+            titleInputRef.current.focus();
+            const len = titleInputRef.current.value.length;
+            titleInputRef.current.setSelectionRange(len, len);
+            console.log('🎯 Focus set after blur');
+          }
+        }, 10);
+      }
+    }, 300);
+    
+    return () => {
+      console.log('💀 Editor component will unmount');
+      clearTimeout(timeoutId);
+    };
+  }, []);
   
   // Поля задач
   const [taskStatus, setTaskStatus] = useState<string>('');
@@ -31,27 +64,6 @@ export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onS
   const [docVersion, setDocVersion] = useState('');
   const [docApproved, setDocApproved] = useState(false);
 
-  // Проверка на несохраненные изменения
-  const getCurrentState = () => {
-    if (!page) return '';
-    const state: any = { title, content, tags: localTags };
-    if (page.type === 'task') {
-      state.taskStatus = taskStatus;
-      state.taskPriority = taskPriority;
-      state.taskDueDate = taskDueDate;
-    }
-    if (page.type === 'doc') {
-      state.docOwner = docOwner;
-      state.docVersion = docVersion;
-      state.docApproved = docApproved;
-    }
-    return JSON.stringify(state);
-  };
-
-  const hasUnsavedChanges = () => {
-    if (!page) return false;
-    return getCurrentState() !== savedState;
-  };
 
   // Функция сохранения - должна быть объявлена до useEffect
   const handleSave = useCallback(() => {
@@ -81,20 +93,8 @@ export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onS
     }
     
     onUpdate(page.id, updates);
-    // Обновляем сохраненное состояние
-    const currentState = JSON.stringify({
-      title,
-      content,
-      tags: localTags,
-      taskStatus: page.type === 'task' ? taskStatus : undefined,
-      taskPriority: page.type === 'task' ? taskPriority : undefined,
-      taskDueDate: page.type === 'task' ? taskDueDate : undefined,
-      docOwner: page.type === 'doc' ? docOwner : undefined,
-      docVersion: page.type === 'doc' ? docVersion : undefined,
-      docApproved: page.type === 'doc' ? docApproved : undefined,
-    });
+    // Сбрасываем флаг несохраненных изменений
     setTimeout(() => {
-      setSavedState(currentState);
       setHasUnsavedChangesState(false);
     }, 100);
   }, [page, title, content, localTags, taskStatus, taskPriority, taskDueDate, docOwner, docVersion, docApproved, onUpdate]);
@@ -102,13 +102,25 @@ export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onS
   const handleSaveAsTemplate = () => {
     if (!page || !onSaveAsTemplate) return;
     if (confirm('Сохранить текущую страницу как шаблон? Вы сможете использовать её для создания новых страниц.')) {
+      // Проверяем и приводим типы для taskStatus и taskPriority
+      const validTaskStatuses: TaskStatus[] = ['backlog', 'in_progress', 'done'];
+      const validTaskPriorities: TaskPriority[] = ['low', 'med', 'high'];
+      
+      const finalTaskStatus: TaskStatus | undefined = page.type === 'task' 
+        ? (validTaskStatuses.includes(taskStatus as TaskStatus) ? taskStatus as TaskStatus : undefined)
+        : page.taskStatus;
+      
+      const finalTaskPriority: TaskPriority | undefined = page.type === 'task'
+        ? (validTaskPriorities.includes(taskPriority as TaskPriority) ? taskPriority as TaskPriority : undefined)
+        : page.taskPriority;
+      
       onSaveAsTemplate({
         ...page,
         title,
         content,
         tags: localTags,
-        taskStatus: page.type === 'task' ? taskStatus : page.taskStatus,
-        taskPriority: page.type === 'task' ? taskPriority : page.taskPriority,
+        taskStatus: finalTaskStatus,
+        taskPriority: finalTaskPriority,
         taskDueDate: page.type === 'task' && taskDueDate ? new Date(taskDueDate).getTime() : page.taskDueDate,
         docOwner: page.type === 'doc' ? docOwner : page.docOwner,
         docVersion: page.type === 'doc' ? docVersion : page.docVersion,
@@ -135,10 +147,10 @@ export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onS
     }
   };
 
-  // Загрузка данных страницы — только при смене страницы или после сохранения.
-  // [page] заменён на [page?.id, page?.updatedAt], чтобы при ре-рендерах родителя
-  // с той же страницей не перезаписывать ввод (title, content и т.д.).
+  // Загрузка данных страницы — только при смене страницы (по ID).
+  // НЕ зависим от page?.updatedAt, чтобы не сбрасывать ввод пользователя при автосохранении!
   useEffect(() => {
+    console.log('🔄 useEffect triggered, page.id:', page?.id, 'title:', page?.title);
     if (page) {
       setTitle(page.title);
       setContent(page.content);
@@ -148,32 +160,47 @@ export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onS
         setTaskStatus(page.taskStatus || 'backlog');
         setTaskPriority(page.taskPriority || 'med');
         setTaskDueDate(page.taskDueDate ? new Date(page.taskDueDate).toISOString().split('T')[0] : '');
+      } else {
+        // Сброс полей задачи, если это не задача
+        setTaskStatus('');
+        setTaskPriority('');
+        setTaskDueDate('');
       }
       
       if (page.type === 'doc') {
         setDocOwner(page.docOwner || '');
         setDocVersion(page.docVersion || '');
         setDocApproved(page.docApproved || false);
+      } else {
+        // Сброс полей документа, если это не документ
+        setDocOwner('');
+        setDocVersion('');
+        setDocApproved(false);
       }
       
-      // Сохраняем текущее состояние как "сохраненное"
+      // Сбрасываем флаг несохраненных изменений
       setTimeout(() => {
-        const initialState = JSON.stringify({
-          title: page.title,
-          content: page.content,
-          tags: page.tags || [],
-          taskStatus: page.type === 'task' ? (page.taskStatus || 'backlog') : undefined,
-          taskPriority: page.type === 'task' ? (page.taskPriority || 'med') : undefined,
-          taskDueDate: page.type === 'task' && page.taskDueDate ? new Date(page.taskDueDate).toISOString().split('T')[0] : undefined,
-          docOwner: page.type === 'doc' ? (page.docOwner || '') : undefined,
-          docVersion: page.type === 'doc' ? (page.docVersion || '') : undefined,
-          docApproved: page.type === 'doc' ? (page.docApproved || false) : undefined,
-        });
-        setSavedState(initialState);
         setHasUnsavedChangesState(false);
       }, 100);
+    } else {
+      // Сброс всех полей когда страница удалена (page === null)
+      setTitle('');
+      setContent('');
+      setLocalTags([]);
+      setTaskStatus('');
+      setTaskPriority('');
+      setTaskDueDate('');
+      setDocOwner('');
+      setDocVersion('');
+      setDocApproved(false);
+      setHasUnsavedChangesState(false);
     }
-  }, [page?.id, page?.updatedAt]);
+    
+    // Сброс lastPageIdRef при размонтировании
+    return () => {
+      lastPageIdRef.current = null;
+    };
+  }, [page?.id]); // Убрали page?.updatedAt из зависимостей!
 
   // Мемоизируем сравнение для оптимизации
   const pageTagsString = useMemo(() => JSON.stringify(page?.tags || []), [page?.tags]);
@@ -267,8 +294,10 @@ export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onS
             </button>
           )}
           <button
-            onClick={() => {
+            onClick={(e) => {
               if (confirm('Вы уверены, что хотите удалить эту страницу? Это действие нельзя отменить.')) {
+                // Сбрасываем фокус с кнопки
+                e.currentTarget.blur();
                 onDelete(page.id);
               }
             }}
@@ -301,9 +330,18 @@ export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onS
       <div className="flex-1 overflow-y-auto p-8 max-w-4xl mx-auto w-full">
         {/* Title */}
         <input
+          ref={titleInputRef}
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onFocus={(e) => {
+            // Принудительно устанавливаем курсор при получении фокуса
+            const len = e.target.value.length;
+            e.target.setSelectionRange(len, len);
+          }}
+          tabIndex={0}
+          autoComplete="off"
+          spellCheck={false}
           className="w-full text-3xl font-bold mb-6 border-none outline-none bg-transparent text-gray-900 dark:text-white"
           placeholder="Название страницы"
         />
@@ -440,6 +478,7 @@ export default function Editor({ page, onUpdate, onExportMarkdown, onDelete, onS
         {/* Content editor */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <MarkdownEditor
+            key={`content-${page.id}`}
             value={content}
             onChange={setContent}
           />

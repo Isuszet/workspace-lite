@@ -56,7 +56,9 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     // В production загружаем собранные файлы
-    const indexPath = path.join(__dirname, '../dist/index.html');
+    // В asar: __dirname = app.asar/dist-electron/electron
+    // Поднимаемся на два уровня вверх и заходим в dist/
+    const indexPath = path.join(__dirname, '../../dist/index.html');
     console.log('Loading production file:', indexPath);
     mainWindow.loadFile(indexPath).catch((err) => {
       console.error('Failed to load production file:', err);
@@ -319,6 +321,16 @@ ipcMain.handle('export-tasks-to-csv', async (_, filters?: PageFilters) => {
   });
   
   fs.writeFileSync(filePath, '\uFEFF' + csv, 'utf-8'); // BOM для правильного отображения в Excel
+});
+
+// Восстановление фокуса окна (для исправления проблем с вводом после dialogs)
+ipcMain.handle('restore-window-focus', async () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    // Быстрый blur/focus окна - минимально заметный
+    mainWindow.blur();
+    mainWindow.focus();
+    mainWindow.webContents.focus();
+  }
 });
 
 // Вспомогательные функции

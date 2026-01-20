@@ -6,16 +6,14 @@
 
 ## 📥 Скачать и установить
 
-> **После загрузки проекта на GitHub**, замените `YOUR_USERNAME` на ваш GitHub username в ссылках ниже.
-
-[![Latest Release](https://img.shields.io/github/v/release/YOUR_USERNAME/workspace-lite?style=for-the-badge)](https://github.com/YOUR_USERNAME/workspace-lite/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/Isuszet/workspace-lite?style=for-the-badge)](https://github.com/Isuszet/workspace-lite/releases/latest)
 
 ### Быстрая установка
 
 1. **Скачайте установщик** для вашей ОС:
-   - 🪟 [Windows (.exe)](https://github.com/YOUR_USERNAME/workspace-lite/releases/latest)
-   - 🍎 [macOS (.dmg)](https://github.com/YOUR_USERNAME/workspace-lite/releases/latest)
-   - 🐧 [Linux (AppImage)](https://github.com/YOUR_USERNAME/workspace-lite/releases/latest)
+   - 🪟 [Windows (.exe)](https://github.com/Isuszet/workspace-lite/releases/latest)
+   - 🍎 [macOS (.dmg)](https://github.com/Isuszet/workspace-lite/releases/latest)
+   - 🐧 [Linux (AppImage)](https://github.com/Isuszet/workspace-lite/releases/latest)
 
 2. **Запустите установщик** и следуйте инструкциям
 

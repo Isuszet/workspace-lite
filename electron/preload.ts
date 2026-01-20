@@ -17,6 +17,8 @@ const electronAPI: ElectronAPI = {
   
   createFromTemplate: (type, templateId) => ipcRenderer.invoke('create-from-template', type, templateId),
   getTemplates: (type) => ipcRenderer.invoke('get-templates', type),
+  
+  restoreWindowFocus: () => ipcRenderer.invoke('restore-window-focus'),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

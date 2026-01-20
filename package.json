@@ -16,7 +16,10 @@
     "electron:start": "cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
     "electron:build": "npm run build && electron-builder",
     "package": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder",
+    "fix-winsign": "node scripts/fix-winsign.cjs",
+    "dist": "npm run fix-winsign && npm run build && electron-builder --dir",
+    "dist:installer": "npm run fix-winsign && npm run build && electron-builder",
+    "dist:portable": "npm run fix-winsign && npm run build && electron-builder --win portable --x64",
     "build:all": "node scripts/build.cjs all",
     "build:win": "node scripts/build.cjs win",
     "build:mac": "node scripts/build.cjs mac",
@@ -50,6 +53,7 @@
   "build": {
     "appId": "com.workspace.lite",
     "productName": "Workspace Lite",
+    "forceCodeSigning": false,
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -65,12 +69,18 @@
         "to": "sql-wasm.wasm"
       }
     ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Workspace Lite",
+      "deleteAppDataOnUninstall": false,
+      "menuCategory": "Productivity",
+      "runAfterFinish": true
+    },
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64", "ia32"]
-        },
         {
           "target": "portable",
           "arch": ["x64"]
@@ -80,16 +90,9 @@
       "publisherName": "Workspace Lite",
       "requestedExecutionLevel": "asInvoker",
       "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "nsis": {
-        "oneClick": false,
-        "allowToChangeInstallationDirectory": true,
-        "createDesktopShortcut": true,
-        "createStartMenuShortcut": true,
-        "shortcutName": "Workspace Lite",
-        "deleteAppDataOnUninstall": false,
-        "menuCategory": "Productivity",
-        "runAfterFinish": true
-      }
+      "sign": null,
+      "signDlls": false,
+      "signExts": []
     },
     "mac": {
       "target": [
