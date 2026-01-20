@@ -11,9 +11,7 @@
 ### Быстрая установка
 
 1. **Скачайте установщик** для вашей ОС:
-   - 🪟 [Windows (.exe)](https://github.com/Isuszet/workspace-lite/releases/latest/download/Workspace%20Lite%20Setup%201.0.0.exe)
-   - 🍎 [macOS (.dmg)](https://github.com/Isuszet/workspace-lite/releases/latest/download/Workspace%20Lite-1.0.0.dmg)
-   - 🐧 [Linux (AppImage)](https://github.com/Isuszet/workspace-lite/releases/latest/download/Workspace%20Lite-1.0.0-x64.AppImage)
+   - 🪟 [Windows (.exe)](https://github.com/Isuszet/workspace-lite/releases/tag/v1.0.0)
 
 2. **Запустите установщик** и следуйте инструкциям
 
