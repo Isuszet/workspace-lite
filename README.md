@@ -6,6 +6,7 @@
 
 ## 📥 Скачать и установить
 
+<<<<<<< HEAD
 [![Latest Release](https://img.shields.io/github/v/release/Isuszet/workspace-lite?style=for-the-badge)](https://github.com/Isuszet/workspace-lite/releases/latest)
 
 ### Быстрая установка
