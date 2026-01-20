@@ -1,3 +1,4 @@
+<img width="1919" height="1032" alt="image" src="https://github.com/user-attachments/assets/6c5eb566-efc2-4d94-be35-009e8ef05cb9" />
 # 🚀 Workspace Lite
 
 **Production-ready кроссплатформенное desktop-приложение для управления заметками, задачами и инструкциями.**
